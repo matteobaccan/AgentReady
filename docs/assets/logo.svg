@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64"
+     role="img" aria-label="AgentReady">
+  <title>AgentReady</title>
+  <desc>A five-step level meter: the 0-5 agent readiness ladder.</desc>
+  <!-- Level 5 -->
+  <rect x="8"  y="8"  width="48" height="7" rx="3.5" fill="#10B981" opacity="1"/>
+  <!-- Level 4 -->
+  <rect x="8"  y="18" width="39" height="7" rx="3.5" fill="#10B981" opacity=".8"/>
+  <!-- Level 3 -->
+  <rect x="8"  y="28" width="30" height="7" rx="3.5" fill="#10B981" opacity=".6"/>
+  <!-- Level 2 -->
+  <rect x="8"  y="38" width="21" height="7" rx="3.5" fill="#10B981" opacity=".45"/>
+  <!-- Level 1 -->
+  <rect x="8"  y="48" width="12" height="7" rx="3.5" fill="#10B981" opacity=".3"/>
+  <!-- Level 0 -->
+  <circle cx="11.5" cy="60" r="2" fill="#10B981" opacity=".22"/>
+</svg>
