@@ -1,199 +1,106 @@
 # Decisions
 
-Two kinds: choices already made while building this (recorded so they can be
-revisited with the reasoning intact), and choices that are **yours** and are
-still open.
-
-Each open decision states what is at stake, the options, a recommendation, and
-what changes downstream if you pick differently. None of them block using the
-tool today.
+Decisions about **this project**. Decisions about a *site being audited* are a
+different thing and live in
+[`skills/agent-ready/references/site-decisions.md`](../skills/agent-ready/references/site-decisions.md)
+— the skill raises those with the site owner, one audit at a time.
 
 ---
 
-# Part 1 — Already decided
+## Part 1 — Settled
 
 | # | Decision | Rationale | Cost of reversing |
 |---|---|---|---|
-| D1 | **Reimplement locally rather than wrap `/api/scan`** | The skill works offline-ish, has no rate limit, no third-party dependency for normal use, and can add checks the reference does not have. `--remote` keeps the reference one flag away. | Low — the wrapper still exists as `--remote`. |
+| D1 | **Reimplement locally rather than wrap `/api/scan`** | Works without a third party, no rate limit, and can add checks the reference does not have. `--remote` keeps the reference one flag away. | Low — the wrapper still exists as `--remote`. |
 | D2 | **Python 3.8 stdlib only, no dependencies** | A skill that needs `pip install` fails the first time someone runs it on a clean machine. | Low. |
-| D3 | **Extended checks are reported but excluded from the level** | Mixing them in would break parity with the reference and make the number incomparable. | Low — one flag in `compute_level()`. |
-| D4 | **Repo name `AgentReady`** *(your call, 2026-08-25)* | Matches the local folder, the README install command, and existing plugin/marketplace ids. | Medium — renaming a public repo breaks `/plugin marketplace add` for anyone who already added it. |
-| D5 | **MIT license** | Permissive, matches the ecosystem (ARD is Apache 2.0, Agent Skills is open). See open decision O2 if you want to reconsider. | Medium — you cannot un-MIT code others already took. |
-| D6 | **Logo: 0–5 level meter** *(your call)* | The ladder *is* the product; the mark stays meaningful next to the level table and legible at 16px. | Trivial. |
-| D7 | **No Claude attribution in commits** *(your call)* | You are the author of record. | Trivial. |
+| D3 | **Extended checks are reported but excluded from the level** | Mixing them in would break comparability with the reference and make the number mean something different from what everyone else's number means. | Low. |
+| D4 | **Repo name `AgentReady`** | Matches the plugin and marketplace ids already in the manifests. | Medium — renaming a public repo breaks `/plugin marketplace add` for anyone who already added it. |
+| D5 | **MIT licence** | Permissive, matches the surrounding ecosystem. | Medium — you cannot un-MIT code others already took. |
+| D6 | **Logo: 0–5 level meter** | The ladder *is* the product; the mark stays meaningful next to the level table and legible at 16px. | Trivial. |
+| D7 | **No Claude attribution in commits** | The repo owner is the author of record. | Trivial. |
+| D8 | **Level rules derived from per-check results, not from `nextLevel`** | The reference's `nextLevel.requirements` is an advisory fix list, not the gate — `vercel.com` is level 5 while failing `authMd`, which that field lists as a requirement for every level-4 site. Deriving from it produced a ladder that matched four fixtures and broke on the fifth. See `METHODOLOGY.md` §2. | Low, but redoing it means re-collecting fixtures. |
+| D9 | **`a2aAgentCard` warns, rather than passes, on the legacy `/.well-known/agent.json` path** | `cloudflare.com` publishes a real card there. Passing it would diverge from the reference's level; ignoring it would hide something true. Warning does both jobs: the level agrees, and the site learns its card is where current-spec agents will not look. | Trivial. |
 
----
+### D10 · The level-4 and level-5 rules *(resolved — was the open question O3)*
 
-# Part 2 — Open decisions
+The first derivation guessed "any two of six" for level 4 and
+"`authMd` + `a2aAgentCard`" for level 5. **Both were wrong.** They matched the
+four fixtures they were built from and failed immediately on wider testing.
 
-## O1 · Publish the repo publicly?
+Rather than pick between "keep the guess" and "always defer to `--remote`", the
+uncertainty was removed: 20 reference reports were collected spanning every
+level from 0 to 5, and the rules were solved from the reference's own per-check
+results.
 
-**At stake:** whether this is a personal tool or a piece of ecosystem
-infrastructure.
-
-The honest framing: this reimplements the scoring model of a Cloudflare
-product, recovered from its public API. That is legitimate — the API is public,
-no Cloudflare code or copy is included, the remediation content is original, and
-`docs/SOURCES.md` credits the reference prominently. But publishing makes that
-relationship visible, so it should be a deliberate choice rather than a default.
-
-| Option | Consequence |
+| Level | Requires |
 |---|---|
-| **Public on GitHub** *(recommended)* | Others can install it; the attribution in `SOURCES.md` does its job in the open; you own the `agent-ready` search term on GitHub. |
-| Private | You keep the tool, nobody audits the level-4 inference, and the plugin install path in the README does not work for anyone else. |
+| 4 | **any one** of `apiCatalog`, `mcpServerCard`, `a2aAgentCard`, `agentSkills` |
+| 5 | `oauthDiscovery` |
 
-**Recommendation: public.** The attribution is already written and accurate. If
-you want a lighter touch, drop the plugin/marketplace manifests and publish it
-as "a scanner and a set of templates" rather than "an isitagentready.com
-reimplementation" — same code, different framing.
+Pinned by `docs/verify/verify_ladder.py` — **20/20 levels reproduced**. The
+evidence for each rule is in `METHODOLOGY.md` §2.
+
+**What is still unresolved,** and cannot be settled with the available
+evidence:
+
+1. Whether `webMcp` and `ard` also unlock level 4. No fixture passes either as
+   its only discovery surface. Excluded conservatively, so a site in that
+   position scores one level low here.
+2. Whether level 5 additionally requires `apiCatalog`. Both level-5 fixtures
+   pass it, and nothing separates the two conditions in this data.
+
+Resolving either needs a fixture that does not currently exist in the wild —
+or the reference publishing its rubric. Until then, `--remote` is the
+tiebreaker.
 
 ---
 
-## O2 · Keep MIT, or move to Apache 2.0?
+## Part 2 — Open
 
-**At stake:** patent posture, and consistency with what this builds on.
+### O1 · Publish the repo publicly?
 
-MIT is the ecosystem default and is already in place. Apache 2.0 adds an
-explicit patent grant and a `NOTICE` mechanism — relevant here only because
-several protocols in scope (ARD, agentic commerce) come from large patent
-holders and this repo encodes their formats in templates.
+*Status: the owner will publish it and supply the URL.*
+
+Worth being deliberate about, because this reimplements the scoring model of a
+Cloudflare product, recovered from its public API. That is legitimate — the API
+is public, no Cloudflare code or copy is included, and the remediation content
+is original — but publishing makes the relationship visible. The attribution is
+already written into the README and `SOURCES.md`.
+
+Once the URL exists, three things need updating: the `homepage` field in
+`.claude-plugin/plugin.json`, the install commands in `README.md`, and the
+`UA` string in `agent_ready_scan.py`, which currently points at a placeholder
+GitHub URL.
+
+### O2 · Keep MIT, or move to Apache 2.0?
+
+Apache 2.0 adds an explicit patent grant, relevant only because several
+protocols in scope come from large patent holders and this repo encodes their
+formats in templates.
 
 **Recommendation: keep MIT.** The patent surface of a scanner and some JSON
-templates is essentially nil. Reconsider only if this grows into a library
-other companies embed.
+templates is essentially nil. Reconsider if this becomes a library other
+companies embed.
 
----
-
-## O3 · The level-4 rule: keep the inference, or defer to the reference?
-
-**This is the weakest claim in the repository** and you should know it is here.
-
-Levels 1, 2, 3 and 5 are pinned by observed data. Level 4 — "any two of
-`apiCatalog`, `mcpServerCard`, `agentSkills`, `webMcp`, `ard`,
-`oauthDiscovery`" — is inferred from two sites that each pass four or five of
-that pool. The observations are consistent with the rule but do not prove the
-threshold is two, nor that the six count equally. Full reasoning in
-`docs/METHODOLOGY.md` §2.
-
-| Option | Consequence |
-|---|---|
-| **Keep it, documented as an approximation** *(recommended)* | Works offline, matches the reference on every fixture tested, and the caveat is written down in three places. |
-| Make `--remote` the default | Authoritative levels always; but every scan then sends the target URL to a third party and takes 60–90s instead of ~10s. |
-| Drop levels, report only per-check results | Honest, and much less useful — the single number is what makes a report actionable. |
-
-**Recommendation: keep it.** Re-run `python docs/verify/verify_parity.py`
-whenever the drafts move; that is what will tell you the rule has drifted.
-
----
-
-## O4 · Add site-type profiles?
+### O3 · Add site-type profiles?
 
 The reference offers *All checks* / *Content site* / *API-application*. This
 scanner always runs everything and marks the inapplicable ones `n/a`.
 
-| Option | Consequence |
-|---|---|
-| **Leave as is** *(recommended)* | `n/a` already communicates "not a gap for you", and a full scan surfaces things a narrow profile would hide. |
-| Add `--profile content\|api\|commerce` | Shorter reports; risk of a site self-selecting out of a check it actually needed. |
+**Recommendation: leave as is.** `n/a` already communicates "not a gap for
+you", and a full scan surfaces things a narrow profile would hide. Revisit if
+reports feel noisy in practice.
 
-**Recommendation: leave it.** Revisit if reports feel noisy in practice.
+### O4 · How often to re-run the fixtures?
 
----
+Every spec in scope is a draft. ARD is v0.9; WebMCP moved its API surface from
+`navigator` to `document` in May 2026; DNS-AID, auth.md and Content Signals are
+Internet-Drafts. The reference will also change its own rules.
 
-# Part 3 — Decisions about `www.baccan.it` itself
+Options: run `verify_ladder.py` (fast, offline) on every commit via CI and
+`verify_parity.py` (slow, live) on a schedule; or run both manually when
+something looks wrong.
 
-Current state: **level 2/5, Bot-Aware**. Hosted on **Netlify**
-(`Server: Netlify`). `llms.txt` is already published and passing. `rss.xml`
-exists but is not linked from `<head>`.
-
-## O5 · What should `Content-Signal: ai-train=` say?
-
-**The only decision here with consequences outside your website.** It is a
-public, machine-readable statement of whether models may train on your writing.
-Your `robots.txt` currently says:
-
-```
-Content-Signal: ai-train=no, search=yes, ai-input=yes
-```
-
-That is: *index me, ground your answers in me and cite me, but do not absorb me
-into a model's weights.*
-
-| Option | Who it fits |
-|---|---|
-| **`ai-train=no`** *(current, and my recommendation)* | Someone whose writing and talks are part of their professional identity. You get citation traffic without your corpus becoming an uncredited training set. |
-| `ai-train=yes` | If your goal is for models to *know* your material by default, so they can answer about it without a retrieval step. Common for documentation whose success metric is being recalled correctly. |
-| Omit the key | States no preference and leaves the decision entirely to the crawler. Not neutrality — abstention. |
-
-**Recommendation: keep `ai-train=no`.** It matches a personal site whose value
-is attribution. Note it is a preference with legal weight in some
-jurisdictions, not an enforcement mechanism — crawlers can ignore it.
-
----
-
-## O6 · Target level 3, or push to 4?
-
-**Level 3** needs exactly one thing: `markdownNegotiation`.
-
-**Level 4** additionally needs two of the discovery pool. For a personal site
-the cheap pair is `agentSkills` + `ard` — both are static JSON/markdown files,
-no server to run.
-
-| Option | Effort | What you actually get |
-|---|---|---|
-| **Stop at 3** *(recommended)* | An afternoon | Every agent that reads your site gets ~5× more of your content per unit of context. This is the change that matters. |
-| Push to 4 | A day, plus something real to publish | Only worth it if you have genuine procedural knowledge to expose as skills — your Java/Clipper/open-source material could qualify. Publishing an empty `ai-catalog.json` to score a point is theatre. |
-| Push to 5 | A project | Requires `auth.md` and an A2A agent card, i.e. delegated credentialed access. Your site has no login. **Do not.** |
-
-**Recommendation: 3 now, and 4 only if you want to publish real skills.**
-
----
-
-## O7 · How to implement markdown negotiation on Netlify
-
-Netlify `_redirects` cannot branch on the `Accept` header (only Country,
-Language, Role), so this needs an Edge Function. The recipe is written and
-ready in `skills/agent-ready/assets/snippets/serving-recipes.md` §1 → *Netlify*.
-
-The real sub-decision is **where the markdown comes from**:
-
-| Option | Consequence |
-|---|---|
-| **Generate `/md/**.md` twins at build time from the same source as the HTML** *(recommended)* | Always in sync. If your pages already originate in markdown, this is a copy step. |
-| Convert HTML → markdown at the edge, on the fly | No build change, but you ship whatever your HTML happens to contain — nav, footers, cookie text. |
-| Skip negotiation, publish `.md` twins and link them with `<link rel="alternate" type="text/markdown">` | Scores **warn**, not pass. Fine as a first step; agents that only do content negotiation will miss them. |
-
-**A twin that drifts from the page is worse than no twin** — an agent will
-quote the stale one confidently.
-
----
-
-## O8 · The three free wins — do them regardless
-
-Not really decisions; they cost minutes and are outside the ladder, so they
-never show up as a level bump.
-
-1. **`Link` headers** — one block in Netlify's `_headers`. Reaches agents that
-   fetch your JSON or PDFs and never parse HTML. Recipe in `serving-recipes.md` §2.
-2. **Link `rss.xml` from `<head>`** — the feed already exists. One `<link>` tag
-   turns it from invisible into the cheapest change-notification channel an
-   agent can use.
-3. **`/.well-known/security.txt`** — one file, RFC 9116. Template in
-   `assets/well-known/security.txt`.
-
-Two more worth a look, from the extended track: the homepage is missing
-`<main>`/`<article>` landmarks and OpenGraph tags. Neither is urgent; both are
-cheap.
-
----
-
-# Summary — what I would actually do
-
-| Priority | Action | Effort |
-|---|---|---|
-| 1 | Markdown negotiation via Netlify Edge Function, markdown twins generated at build → **level 3** | afternoon |
-| 2 | `Link` headers + `<link>` the RSS feed + `security.txt` | minutes |
-| 3 | Keep `ai-train=no` | done |
-| 4 | Publish the repo public, MIT, as is | minutes |
-| 5 | Level 4 *only* if you have real skills to publish | a day |
-| — | Level 5, commerce protocols, DNS-AID, Web Bot Auth | not applicable to this site |
+**Recommendation: CI on `verify_ladder.py`, monthly on `verify_parity.py`.**
+The ladder test is free and catches the class of error that actually happened
+here. Not yet set up — no CI configuration is committed.

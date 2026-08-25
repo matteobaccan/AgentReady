@@ -44,7 +44,7 @@ AI_BOTS = [
 ]
 
 LEVEL_NAMES = {
-    0: "Unprepared",
+    0: "Not Ready",
     1: "Basic Web Presence",
     2: "Bot-Aware",
     3: "Agent-Readable",
@@ -656,19 +656,28 @@ def check_a2a_agent_card(s: Site) -> Check:
     c = Check("a2aAgentCard", "discovery", "A2A Agent Card",
               spec=["https://a2a-protocol.org/latest/specification/",
                     "https://a2a-protocol.org/latest/topics/agent-discovery/"])
-    for path in ("/.well-known/agent-card.json", "/.well-known/agent.json"):
+    # /.well-known/agent.json is the pre-v0.3 location. A card found only there
+    # is real but published at a deprecated path, so it warns rather than
+    # passes: agents following the current spec will not find it.
+    for path, current in (("/.well-known/agent-card.json", True),
+                          ("/.well-known/agent.json", False)):
         r = s.get(path)
         d = r.json() if r.ok else None
-        if isinstance(d, dict) and ("name" in d or "protocolVersion" in d):
-            skills = d.get("skills") or []
-            c.ev("GET " + path, "positive",
-                 "'" + str(d.get("name", "?")) + "' with " + str(len(skills)) + " skill(s)")
-            return c.set(PASS, "A2A Agent Card published at " + path,
-                         path=path, name=d.get("name"), skills=len(skills),
-                         url=d.get("url"), extensions=[
-                             e.get("uri") for e in
-                             ((d.get("capabilities") or {}).get("extensions") or [])])
-        c.ev("GET " + path, "negative", "HTTP " + str(r.status or "error"))
+        if not (isinstance(d, dict) and ("name" in d or "protocolVersion" in d)):
+            c.ev("GET " + path, "negative", "HTTP " + str(r.status or "error"))
+            continue
+        skills = d.get("skills") or []
+        c.ev("GET " + path, "positive" if current else "neutral",
+             "'" + str(d.get("name", "?")) + "' with " + str(len(skills)) + " skill(s)")
+        details = dict(path=path, name=d.get("name"), skills=len(skills),
+                       url=d.get("url"),
+                       extensions=[e.get("uri") for e in
+                                   ((d.get("capabilities") or {}).get("extensions") or [])])
+        if current:
+            return c.set(PASS, "A2A Agent Card published at " + path, **details)
+        return c.set(WARN, "A2A Agent Card found at the deprecated path " + path +
+                     "; the current spec expects /.well-known/agent-card.json",
+                     deprecatedPath=True, **details)
     return c.set(FAIL, "A2A Agent Card not found")
 
 
@@ -1026,14 +1035,21 @@ def check_feed(s: Site) -> Check:
 # Level ladder
 # --------------------------------------------------------------------------- #
 
-L4_POOL = ["apiCatalog", "mcpServerCard", "agentSkills", "webMcp", "ard", "oauthDiscovery"]
+# Level 4 is unlocked by ANY ONE of these four "callable surface" checks.
+# Derived from 20 reference reports spanning levels 0-5; see docs/METHODOLOGY.md.
+# Note what is NOT here: webMcp and ard never appear as the sole discovery pass
+# on any fixture, so whether they also unlock level 4 is untestable with the
+# available evidence. They are excluded conservatively.
+L4_POOL = ["apiCatalog", "mcpServerCard", "a2aAgentCard", "agentSkills"]
+
+ANY_SURFACE = "__any_discovery_surface__"
 
 LADDER = [
     (1, ["robotsTxt", "sitemap"]),
     (2, ["robotsTxtAiRules", "contentSignals"]),
     (3, ["markdownNegotiation"]),
-    (4, ["__two_of_discovery__"]),
-    (5, ["authMd", "a2aAgentCard"]),
+    (4, [ANY_SURFACE]),
+    (5, ["oauthDiscovery"]),
 ]
 
 REQ_DESCRIPTIONS = {
@@ -1042,22 +1058,26 @@ REQ_DESCRIPTIONS = {
     "robotsTxtAiRules": "Cover AI crawlers with explicit or wildcard robots.txt rules",
     "contentSignals": "Declare AI content usage preferences with Content Signals in robots.txt",
     "markdownNegotiation": "Support Accept: text/markdown content negotiation",
-    "__two_of_discovery__": "Expose at least two discovery surfaces "
-                            "(API catalog, MCP server card, agent skills, WebMCP, ARD, OAuth)",
-    "authMd": "Publish auth.md metadata for agent registration",
-    "a2aAgentCard": "Publish an A2A Agent Card for agent-to-agent discovery",
+    ANY_SURFACE: "Expose at least one callable surface: an API catalog, an MCP "
+                 "server card, an A2A agent card or an agent skills index",
+    "oauthDiscovery": "Publish OAuth/OIDC discovery metadata so agents can "
+                      "authenticate rather than only read",
 }
 
 
 def compute_level(by_id: dict) -> tuple:
-    """Return (level, next_target, [unmet requirement ids])."""
+    """Return (level, next_target, [unmet requirement ids]).
+
+    The ladder is sequential: a check that would satisfy a higher rung does
+    not count until every lower rung is satisfied.
+    """
     passed = set(k for k, c in by_id.items() if c.status == PASS)
     level = 0
     for target, reqs in LADDER:
         unmet = []
         for req in reqs:
-            if req == "__two_of_discovery__":
-                if len([x for x in L4_POOL if x in passed]) < 2:
+            if req == ANY_SURFACE:
+                if not any(x in passed for x in L4_POOL):
                     unmet.append(req)
             elif req not in passed:
                 unmet.append(req)
@@ -1138,7 +1158,8 @@ def run_scan(target: str, deep=False, timeout=12, only=None, extended=True) -> d
         "levelName": LEVEL_NAMES[level],
         "nextLevel": None if nxt is None else {
             "target": nxt, "name": LEVEL_NAMES[nxt],
-            "requirements": [{"check": u, "description": REQ_DESCRIPTIONS.get(u, u)}
+            "requirements": [{"check": "anyDiscoverySurface" if u == ANY_SURFACE else u,
+                              "description": REQ_DESCRIPTIONS.get(u, u)}
                              for u in unmet],
         },
         "isCommerce": is_commerce,

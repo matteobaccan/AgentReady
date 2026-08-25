@@ -134,7 +134,9 @@ Publishing nothing is normal and reports **n/a**.
 ## Category 4 — API, Auth & MCP Discovery
 
 This is where most sites sit at zero, and where the biggest jump in the ladder
-lives. You do **not** need all nine. Two well-chosen ones reach level 4.
+lives. You do **not** need all nine — **any one** of `apiCatalog`,
+`mcpServerCard`, `a2aAgentCard` or `agentSkills` reaches level 4. Pick the one
+that matches something the site already has; see `levels.md`.
 
 ### `apiCatalog` — API Catalog (RFC 9727)
 *Probe:* `GET /.well-known/api-catalog` with
@@ -153,7 +155,10 @@ with a `linkset` array.
 `authorization_endpoint`. The scanner also flags an `agent_auth` block, which is
 what auth.md keys off.
 
-*Skip this* if the site has no login. It is not a gap for a content site.
+*This is the level-5 gate* — the one check separating Agent-Integrated from
+Agent-Native. But *skip it* if the site has no login: it is not a gap for a
+content site, and there is no honest way to publish it without an
+authorization server behind it.
 
 *Spec:* RFC 8414 · OpenID Connect Discovery 1.0
 
@@ -192,7 +197,11 @@ decide whether to connect: describe the tools, not the company.
 *Probe:* `/.well-known/agent-card.json`, then `/.well-known/agent.json`.
 
 *Only relevant if you run an agent* other agents should delegate to. For a
-content site this is legitimately not applicable — but note it gates level 5.
+content site this is legitimately not applicable.
+
+*Path note:* `/.well-known/agent.json` is the pre-v0.3 location. A card found
+only there scores **warn**: it is real, but agents following the current spec
+look at `agent-card.json` and will not find it.
 
 *Spec:* <https://a2a-protocol.org/latest/specification/>
 

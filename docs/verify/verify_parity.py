@@ -2,15 +2,24 @@
 """
 Parity suite: does this scanner agree with isitagentready.com?
 
-For each fixture it runs the local scanner and the reference API, then compares
-BOTH the level and the set of checks reported as blocking the next level.
-Comparing only the level would hide a ladder that is right by accident.
+For each fixture it runs the local scanner and the reference API and compares
+the assigned level -- the one number both tools define the same way.
+
+It does NOT fail on differing "next level" lists. The reference's
+nextLevel.requirements is a curated list of suggested fixes, not the gate:
+vercel.com reaches level 5 while still failing authMd, yet authMd is listed as
+a requirement for every level-4 site. This scanner instead reports the checks
+that actually unblock the next rung. The two lists are printed side by side as
+information.
+
+The rules themselves are pinned by docs/verify/verify_ladder.py, which replays
+compute_level() against 20 cached reference reports spanning levels 0-5.
 
     python docs/verify/verify_parity.py
     python docs/verify/verify_parity.py --sites example.com
     python docs/verify/verify_parity.py --quiet     # exit code only
 
-Exit code 0 if every fixture matches, 1 otherwise -- usable in CI.
+Exit code 0 if every fixture's level matches, 1 otherwise -- usable in CI.
 Stdlib only. Hits the network; allow ~60-90s per site for the reference API.
 """
 
@@ -67,14 +76,10 @@ def main():
             failures += 1
             continue
 
-        # The level-4 pool rule is an inference; treat a blocking-set mismatch
-        # as a failure too, since that is what would expose a wrong threshold.
         same_level = mine["level"] == theirs.get("level")
-        same_block = blocking(mine) == blocking(theirs)
-        if not (same_level and same_block):
+        if not same_level:
             failures += 1
-        rows.append((site, mine, theirs, None if (same_level and same_block)
-                     else ("level" if not same_level else "blocking checks")))
+        rows.append((site, mine, theirs, None if same_level else "level"))
 
     if not a.quiet:
         print()
@@ -86,18 +91,20 @@ def main():
                 print("%-30s %-26s %-26s ERROR %s" % (site, m, "-", err))
                 continue
             t = "%d %s" % (theirs.get("level", -1), theirs.get("levelName", "?"))
-            mark = "OK" if err is None else "MISMATCH (" + err + ")"
-            print("%-30s %-26s %-26s %s" % (site, m, t, mark))
+            print("%-30s %-26s %-26s %s" % (site, m, t,
+                                            "OK" if err is None else "MISMATCH"))
+            # Informational only -- see the module docstring.
             mb, tb = blocking(mine), blocking(theirs)
-            print("%-30s %-26s %-26s" % ("  blocking ->", ",".join(mb) or "-",
-                                         ",".join(tb) or "-"))
+            if mb != tb:
+                print("%-30s %-26s %-26s (advisory, not compared)"
+                      % ("  next ->", ",".join(mb) or "-", ",".join(tb) or "-"))
         print()
-        print("%d/%d fixtures match on level AND blocking checks."
-              % (len(sites) - failures, len(sites)))
+        print("%d/%d fixtures match on level." % (len(sites) - failures, len(sites)))
         if failures:
-            print("A mismatch usually means a draft spec moved, or the "
-                  "level-4 threshold in compute_level() needs revisiting.")
-            print("See docs/METHODOLOGY.md section 2.")
+            print("A level mismatch means a draft spec moved or a check "
+                  "regressed. Run docs/verify/verify_ladder.py to see whether "
+                  "the ladder rules themselves still hold, then see "
+                  "docs/METHODOLOGY.md section 2.")
 
     return 1 if failures else 0
 

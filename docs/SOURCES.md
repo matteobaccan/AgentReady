@@ -205,11 +205,21 @@ trail. See `METHODOLOGY.md` §2.
 
 ## 5. Sites scanned for validation
 
-Used only as test fixtures, to confirm this scanner produces the same level and
-next-level requirements as the reference. No content from them is redistributed.
+Used only as test fixtures, to derive the level ladder and confirm this scanner
+reproduces the level the reference assigns. Twenty sites covering every level
+from 0 to 5. Only each site's per-check pass/fail verdict is stored, in
+`docs/verify/fixtures/reference-levels.json`; no site content is redistributed.
 
-`stripe.com` · `www.baccan.it` · `developers.cloudflare.com` ·
-`isitagentready.com`
+| Level | Fixtures |
+|---|---|
+| 0 | `github.com` |
+| 1 | `anthropic.com` · `hackmd.io` · `posthog.com` · `stripe.com` · `workos.com` |
+| 2 | `sentry.io` · `www.baccan.it` |
+| 3 | `cloudflare.com` |
+| 4 | `agentskills.io` · `descope.com` · `developers.cloudflare.com` · `docs.stripe.com` · `isitagentready.com` · `modelcontextprotocol.io` · `netlify.com` · `railway.app` · `supabase.com` |
+| 5 | `apify.com` · `vercel.com` |
+
+Refresh them with `python docs/verify/verify_ladder.py --refresh`.
 
 ---
 

@@ -2,73 +2,93 @@
 
 ## The ladder
 
-Each level requires everything below it. The rules below are implemented in
-`compute_level()` in `scripts/agent_ready_scan.py`, and were derived by
-scanning reference sites against Cloudflare's isitagentready.com until levels
-and next-level requirements matched on all of them.
+Each level requires everything below it. The rules are implemented in
+`compute_level()` in `scripts/agent_ready_scan.py` and were derived from 20
+reference reports spanning every level from 0 to 5 — see
+`docs/METHODOLOGY.md` §2 for the derivation and the evidence pinning each rule.
 
 | Level | Name | Requires |
 |---|---|---|
-| **0** | Unprepared | — no valid robots.txt or no sitemap |
+| **0** | Not Ready | — no valid robots.txt, or no sitemap |
 | **1** | Basic Web Presence | `robotsTxt` + `sitemap` |
 | **2** | Bot-Aware | + `robotsTxtAiRules` + `contentSignals` |
 | **3** | Agent-Readable | + `markdownNegotiation` |
-| **4** | Agent-Integrated | + **any two** of `apiCatalog`, `mcpServerCard`, `agentSkills`, `webMcp`, `ard`, `oauthDiscovery` |
-| **5** | Agent-Native | + `authMd` + `a2aAgentCard` |
+| **4** | Agent-Integrated | + **any one** of `apiCatalog`, `mcpServerCard`, `a2aAgentCard`, `agentSkills` |
+| **5** | Agent-Native | + `oauthDiscovery` |
 
-Checks outside the ladder — `linkHeaders`, `dnsAid`, `webBotAuth`,
-`oauthProtectedResource`, all commerce checks, the whole extended track — never
-change the level. They are still worth fixing; the level is a floor, not a
-score.
+**The ladder is sequential.** A check that would satisfy a higher rung does not
+count until every lower rung is satisfied. `stripe.com` publishes an agent
+skills index — which is a level-4 surface — and is still level 1, because it
+declares no Content Signals.
+
+Everything else — `linkHeaders`, `dnsAid`, `webBotAuth`,
+`oauthProtectedResource`, `authMd`, `webMcp`, `ard`, every commerce check, the
+whole extended track — is **outside the ladder** and never changes the level.
+That does not make those checks unimportant; it makes the level a floor rather
+than a score.
+
+Two surprises worth internalising, both of which the data forces:
+
+- **`authMd` is not a gate anywhere.** `workos.com` publishes one at level 1;
+  `vercel.com` reaches level 5 without one.
+- **`webMcp` and `ard` do not currently count toward level 4.** No observed
+  site passes either as its *only* discovery surface, so their contribution
+  could not be established and they are excluded conservatively. A site in that
+  unusual position will be scored one level low here — run `--remote` if you
+  think you are that site.
 
 ### Validation
 
-| Site | This scanner | isitagentready.com |
-|---|---|---|
-| stripe.com | 1 Basic Web Presence, needs `contentSignals` | identical |
-| www.baccan.it | 2 Bot-Aware, needs `markdownNegotiation` | identical |
-| developers.cloudflare.com | 4 Agent-Integrated, needs `authMd` + `a2aAgentCard` | identical |
-| isitagentready.com | 4 Agent-Integrated, needs `authMd` + `a2aAgentCard` | identical |
-
-Re-verify at any time with `--remote`, which runs the official scan alongside
-and prints both levels.
+`docs/verify/verify_ladder.py` replays these rules against 20 cached reference
+reports: **20/20 levels reproduced**, covering levels 0, 1, 2, 3, 4 and 5.
+`docs/verify/verify_parity.py` re-checks the whole scanner live. Run both after
+any change to a check.
 
 ---
 
 ## What each rung actually buys you
 
 **0 → 1 — be legible at all.** robots.txt and a sitemap. An agent that cannot
-enumerate your pages treats your site as whatever it happened to land on.
-Half an hour of work, and nothing downstream works without it.
+enumerate your pages treats your site as whatever it happened to land on. Half
+an hour of work, and nothing downstream works without it.
 
 **1 → 2 — state your terms.** Content Signals is the only place you get to say,
 machine-readably, whether your content may be used for training, for grounding
 generative answers, or only for classic search. Publishing nothing is not
-neutrality — it leaves the decision entirely to the crawler.
+neutrality — it leaves the decision entirely to the crawler. Note that passing
+`robotsTxtAiRules` is not enough on its own; both checks gate this rung.
 
 **2 → 3 — stop making agents read HTML.** Markdown negotiation is the highest
 value-per-hour item on the whole ladder: no new endpoint, no new protocol, one
-server rule, and every agent that touches your site suddenly reads ~5× more of
-your content within the same context budget. If you do exactly one thing from
-this document, do this.
+server rule, and every agent that touches the site suddenly reads far more of
+the content within the same context budget. If a site does exactly one thing
+from this document, this is the one.
 
-**3 → 4 — give agents something to call.** Two of six. For most sites the cheap
-pair is `agentSkills` (procedural knowledge, just markdown files) plus `ard`
-(one index JSON). If you already have an API, `apiCatalog` is nearly free. Ship
-`mcpServerCard` only when there is a real MCP server behind it — a card pointing
-at nothing is worse than no card.
+**3 → 4 — give agents something to call.** One surface is enough, so pick the
+one that matches what the site actually has:
 
-**4 → 5 — let agents act on a user's behalf.** `auth.md` and an A2A Agent Card.
-This is a product decision, not a config change: you are opening delegated,
-credentialed access. For a content site, level 4 is a perfectly good ceiling and
-level 5 would be theatre.
+| The site is… | Cheapest honest surface |
+|---|---|
+| documentation, a knowledge base, a blog with real procedural content | `agentSkills` — markdown files, no server |
+| an existing REST/GraphQL API | `apiCatalog` — one linkset document |
+| already running an MCP server | `mcpServerCard` — one JSON file |
+| already running an agent others delegate to | `a2aAgentCard` |
+
+Ship the card only when there is something real behind it. An MCP card pointing
+at a dead endpoint, or an empty skills index, is worse than publishing nothing:
+it wastes an agent's call and teaches it not to trust the domain.
+
+**4 → 5 — let agents authenticate.** `oauthDiscovery` — publishing OAuth or
+OIDC discovery metadata so an agent can move from reading the site to acting
+within it as a user. This is a product decision, not a config change. A site
+with no login has no honest path to level 5, and should not want one.
 
 ---
 
 ## Prioritising a real backlog
 
-Sort by (impact ÷ effort), not by ladder order — apart from the fact that the
-level itself only moves in ladder order.
+Sort by impact ÷ effort, not by ladder order — except that the level itself only
+moves in ladder order.
 
 **Tier 1 — hours, benefits every agent**
 1. `robotsTxt` + `sitemap` + `contentSignals` — one file.
@@ -78,30 +98,38 @@ level itself only moves in ladder order.
 4. `linkHeaders` — one header, and it reaches agents that never parse HTML.
 
 **Tier 2 — a day, unlocks level 4**
-5. `agentSkills` — write what your support team keeps re-explaining.
-6. `ard` (`ai-catalog.json`) — the index that ties everything together.
-7. `structuredData` — Organization + WebSite JSON-LD.
-8. `llmsTxt` — curated reading order.
+5. One surface from the table above.
+6. `structuredData` — Organization + WebSite JSON-LD.
+7. `llmsTxt` — curated reading order.
+8. `ard` (`ai-catalog.json`) — the index tying the surfaces together. Does not
+   move the level on its own, but it is how registries find the rest.
 
 **Tier 3 — a project, only with a reason**
-9. `mcpServerCard` + a real MCP server.
-10. `apiCatalog` + `oauthProtectedResource` — if you have an authenticated API.
-11. `webMcp` — if the site has interactive flows worth exposing as tools.
-12. `authMd` + `a2aAgentCard` — delegated agent access.
-13. Commerce protocols — pick by channel, not by count.
+9. `oauthDiscovery` + `oauthProtectedResource` — an authenticated API or MCP
+   server.
+10. `webMcp` — interactive flows worth exposing as callable tools.
+11. `authMd` — delegated agent registration.
+12. Commerce protocols — pick by sales channel, not by count.
 
 **Skip unless it applies**
-`dnsAid` (you operate agent infrastructure), `webBotAuth` (you operate a
-crawler), `ap2` (you already run A2A).
+`dnsAid` (the site operates agent infrastructure), `webBotAuth` (it operates a
+crawler), `ap2` (it already runs A2A).
 
 ---
 
 ## Reasonable targets
 
+The right ceiling depends on what the site *is*. Pushing past it produces
+files nobody calls.
+
 | Site type | Sensible ceiling | Why |
 |---|---|---|
-| Blog, portfolio, brochure | **3** Agent-Readable | Nothing to call. Spend the rest of the effort on content quality and markdown. |
-| Documentation, knowledge base | **4** Agent-Integrated | `agentSkills` + `ard` + `llms.txt` is exactly the shape docs want. |
-| SaaS with a public API | **4–5** | `apiCatalog` + `oauthProtectedResource` + MCP server; level 5 when delegated access is a product. |
+| Blog, portfolio, brochure | **3** Agent-Readable | Nothing to call. Spend the remaining effort on content quality and the extended track. |
+| Documentation, knowledge base | **4** Agent-Integrated | `agentSkills` is exactly the shape docs already have. |
+| SaaS with a public API | **4–5** | `apiCatalog` gets you to 4; level 5 when delegated access is a product decision you have actually made. |
 | E-commerce | **4** + one commerce protocol | Pick the channel you want to sell through. |
 | Agent or MCP vendor | **5** | You are the use case. |
+
+A level 3 site with a clean extended track serves agents better than a level 4
+site whose homepage is an empty JavaScript shell. Report the level, then report
+what actually matters.

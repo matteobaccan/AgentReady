@@ -10,10 +10,10 @@ core checks and the level ladder reproduce
 cover things that scanner does not score but agents depend on.
 
 ```
-$ python skills/agent-ready/scripts/agent_ready_scan.py www.baccan.it
+$ python skills/agent-ready/scripts/agent_ready_scan.py example.com
 
 ==============================================================================
-Agent Readiness: https://www.baccan.it
+Agent Readiness: https://example.com
 Level 2/5 - Bot-Aware
 ==============================================================================
 
@@ -46,8 +46,8 @@ cp -r skills/agent-ready ~/.claude/skills/
 Copy-Item -Recurse skills\agent-ready $env:USERPROFILE\.claude\skills\
 ```
 
-Then just ask: *"is baccan.it agent-ready?"*, *"score this site for AI agents"*,
-*"generate the .well-known files to get us to level 4"*.
+Then just ask: *"is example.com agent-ready?"*, *"score this site for AI
+agents"*, *"generate the .well-known files to get us to level 4"*.
 
 ## The scanner on its own
 
@@ -82,17 +82,20 @@ Exit code is 0 at level ≥ 1, 1 otherwise — usable as a CI gate.
 
 | Level | Name | Requires |
 |---|---|---|
-| 0 | Unprepared | — |
+| 0 | Not Ready | — |
 | 1 | Basic Web Presence | `robotsTxt` + `sitemap` |
 | 2 | Bot-Aware | + `robotsTxtAiRules` + `contentSignals` |
 | 3 | Agent-Readable | + `markdownNegotiation` |
-| 4 | Agent-Integrated | + any two of `apiCatalog` `mcpServerCard` `agentSkills` `webMcp` `ard` `oauthDiscovery` |
-| 5 | Agent-Native | + `authMd` + `a2aAgentCard` |
+| 4 | Agent-Integrated | + **any one** of `apiCatalog` `mcpServerCard` `a2aAgentCard` `agentSkills` |
+| 5 | Agent-Native | + `oauthDiscovery` |
 
-Verified to produce the same level *and* the same next-level requirements as
-isitagentready.com on `stripe.com` (1), `www.baccan.it` (2),
-`developers.cloudflare.com` (4) and `isitagentready.com` (4). Re-check any time
-with `--remote`.
+The ladder is sequential — a check that would satisfy a higher rung does not
+count until every lower rung is satisfied. Everything else, `linkHeaders` and
+`authMd` included, sits outside the ladder and never changes the level.
+
+These rules were solved from 20 reference reports covering every level from 0
+to 5, and `docs/verify/verify_ladder.py` reproduces **20/20** of the levels
+isitagentready.com assigned. Re-check any site with `--remote`.
 
 ## Templates you can deploy
 
@@ -110,7 +113,8 @@ well-known/api-catalog.json         RFC 9727 linkset
 well-known/agent-skills/index.json  Agent Skills discovery index
 well-known/security.txt             RFC 9116
 snippets/serving-recipes.md         markdown negotiation + Link headers for
-                                    Cloudflare, nginx, Apache, Express, Next.js
+                                    Cloudflare, nginx, Apache, Express,
+                                    Next.js and Netlify, plus content types
 snippets/webmcp.js                  document.modelContext tool registration
 snippets/head-and-jsonld.html       Organization/WebSite JSON-LD + discovery links
 ```
@@ -141,24 +145,39 @@ x402 · MPP · UCP · ACP · AP2
 | [`docs/SOURCES.md`](docs/SOURCES.md) | Every spec and endpoint relied on, each marked as read directly or cited from a search listing, with a link-check date |
 | [`docs/DECISIONS.md`](docs/DECISIONS.md) | Decisions already made and why; the ones still open, with recommendations |
 | [`skills/agent-ready/references/checks.md`](skills/agent-ready/references/checks.md) | All 30 checks: probe, pass condition, fix, spec link |
-| [`skills/agent-ready/references/levels.md`](skills/agent-ready/references/levels.md) | The ladder, its validation, a prioritised backlog |
+| [`skills/agent-ready/references/levels.md`](skills/agent-ready/references/levels.md) | The ladder, its validation, a prioritised backlog, the sensible ceiling per site type |
+| [`skills/agent-ready/references/site-decisions.md`](skills/agent-ready/references/site-decisions.md) | The four questions that are the site owner's call, not the auditor's |
 
 ## Verifying it yourself
 
 ```bash
-python docs/verify/verify_parity.py    # does this agree with the reference? exit 0 if yes
-python docs/verify/extract_probes.py   # re-derive the probe paths from the reference's evidence trail
+# are the ladder rules right?  fast, offline, 20 cached fixtures, levels 0-5
+python docs/verify/verify_ladder.py
+
+# is the whole scanner right?  live, one reference scan per site
+python docs/verify/verify_parity.py
+
+# re-derive the probe paths from the reference's own evidence trail
+python docs/verify/extract_probes.py
 ```
 
-Both are stdlib-only and hit the network. `verify_parity.py` is usable as a CI
-gate: it fails if the level *or* the set of blocking checks diverges.
+All stdlib-only. `verify_ladder.py` is the one to wire into CI — it is free,
+deterministic, and catches the class of error that actually happened here (an
+early ladder guess that matched four fixtures and broke on the fifth).
+
+`verify_parity.py` deliberately compares **levels only**. The reference's
+"next level" list is an advisory set of suggested fixes rather than the real
+gate — `vercel.com` sits at level 5 while still failing `authMd`, which that
+field names as a requirement for every level-4 site.
 
 ## Caveats
 
-- **The level-4 rule is inferred, not observed.** "Any two of six" is
-  consistent with every fixture tested but is not proven. It is the weakest
-  claim here — see [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) §2, and use
-  `--remote` when the answer has to be authoritative.
+- **Two ladder details remain unsettled**: whether `webMcp` and `ard` also
+  unlock level 4 (no observed site passes either as its *only* discovery
+  surface, so they are excluded conservatively — such a site would score one
+  level low here), and whether level 5 also requires `apiCatalog`. See
+  [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) §2; use `--remote` when the
+  answer has to be authoritative.
 - **WebMCP** is detected by scanning HTML and (with `--deep`) same-origin
   scripts. The reference scanner loads the page in a real browser, so a fail
   here can be a false negative on a heavily bundled site.

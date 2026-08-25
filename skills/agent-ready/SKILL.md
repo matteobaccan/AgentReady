@@ -96,17 +96,15 @@ For each check to fix:
 
 ### Judgement calls to raise, not decide
 
-Three of these encode a policy the site owner owns. Ask; do not pick a default
-and move on:
+Four questions in every audit encode a policy or product choice the site owner
+owns: the `ai-train` Content Signal, which level to target, where the markdown
+comes from, and which commerce protocol (if any). **Read
+`references/site-decisions.md` before raising any of them** — it has the
+trade-offs, the recommendation for each site type, and how to present them
+without turning a personal blog into a decision matrix.
 
-- **`Content-Signal: ai-train=`** — whether models may train on this content.
-  `search=yes, ai-input=yes, ai-train=no` is the common stance for a site that
-  wants citations without absorption; a docs site often wants `ai-train=yes`.
-- **Which commerce protocol** — ACP reaches ChatGPT, UCP reaches Google's
-  shopping surfaces, x402/MPP are for selling API calls. Choosing all of them
-  means choosing none.
-- **Level 5** — `auth.md` and an A2A card open delegated, credentialed access.
-  That is a product decision. For a content site, level 4 is a fine ceiling.
+Never pick a default quietly on these. They end up in public,
+machine-readable files that state a position on the owner's behalf.
 
 ---
 
@@ -132,4 +130,6 @@ and move on:
 ## References
 
 - `references/checks.md` — all 30 checks: probe, pass condition, fix, spec link.
-- `references/levels.md` — the ladder, its validation, and a prioritised backlog.
+- `references/levels.md` — the ladder, its validation, a prioritised backlog,
+  and the sensible ceiling per site type.
+- `references/site-decisions.md` — the four owner decisions and how to raise them.
