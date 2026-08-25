@@ -1,5 +1,8 @@
 <img src="docs/assets/logo-wordmark.svg" alt="AgentReady" width="330">
 
+[![CI](https://github.com/matteobaccan/AgentReady/actions/workflows/ci.yml/badge.svg)](https://github.com/matteobaccan/AgentReady/actions/workflows/ci.yml)
+[![Parity](https://github.com/matteobaccan/AgentReady/actions/workflows/parity.yml/badge.svg)](https://github.com/matteobaccan/AgentReady/actions/workflows/parity.yml)
+
 A Claude Code skill that answers **"is this site ready for AI agents?"** — and
 then fixes it.
 
@@ -154,6 +157,9 @@ x402 · MPP · UCP · ACP · AP2
 # are the ladder rules right?  fast, offline, 20 cached fixtures, levels 0-5
 python docs/verify/verify_ladder.py
 
+# are the shipped templates valid, and still templates?
+python docs/verify/verify_assets.py
+
 # is the whole scanner right?  live, one reference scan per site
 python docs/verify/verify_parity.py
 
@@ -161,11 +167,14 @@ python docs/verify/verify_parity.py
 python docs/verify/extract_probes.py
 ```
 
-All stdlib-only. `verify_ladder.py` is the one to wire into CI — it is free,
-deterministic, and catches the class of error that actually happened here (an
-early ladder guess that matched four fixtures and broke on the fifth).
+All stdlib-only. The first two run in CI on every push, across Python 3.8,
+3.11 and 3.13 and on Windows — they are free and deterministic, so a red build
+always means this repo broke rather than that someone else's site was down.
+`verify_ladder.py` catches the class of error that actually happened here: an
+early ladder guess that matched four fixtures and broke on the fifth.
 
-`verify_parity.py` deliberately compares **levels only**. The reference's
+`verify_parity.py` runs monthly instead, since it depends on live third-party
+sites. It deliberately compares **levels only**. The reference's
 "next level" list is an advisory set of suggested fixes rather than the real
 gate — `vercel.com` sits at level 5 while still failing `authMd`, which that
 field names as a requirement for every level-4 site.

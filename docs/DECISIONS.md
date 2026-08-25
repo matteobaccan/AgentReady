@@ -57,7 +57,7 @@ tiebreaker.
 
 ## Part 2 — Open
 
-*O1 is settled and kept here for its reasoning.*
+*O1 and O4 are settled; kept here for their reasoning.*
 
 ### ~~O1 · Publish the repo publicly?~~ — *done*
 
@@ -93,16 +93,22 @@ scanner always runs everything and marks the inapplicable ones `n/a`.
 you", and a full scan surfaces things a narrow profile would hide. Revisit if
 reports feel noisy in practice.
 
-### O4 · How often to re-run the fixtures?
+### ~~O4 · How often to re-run the fixtures?~~ — *done*
 
 Every spec in scope is a draft. ARD is v0.9; WebMCP moved its API surface from
 `navigator` to `document` in May 2026; DNS-AID, auth.md and Content Signals are
 Internet-Drafts. The reference will also change its own rules.
 
-Options: run `verify_ladder.py` (fast, offline) on every commit via CI and
-`verify_parity.py` (slow, live) on a schedule; or run both manually when
-something looks wrong.
+Implemented as two workflows, split by what a red build should *mean*:
 
-**Recommendation: CI on `verify_ladder.py`, monthly on `verify_parity.py`.**
-The ladder test is free and catches the class of error that actually happened
-here. Not yet set up — no CI configuration is committed.
+- **`.github/workflows/ci.yml`** — every push and PR. Offline and
+  deterministic, so a failure always means this repo broke, never that
+  somebody else's site was down. Compiles every module, runs `verify_ladder.py`
+  and `verify_assets.py`, on Python 3.8 / 3.11 / 3.13 and on Windows. The one
+  network step is a non-blocking smoke test.
+- **`.github/workflows/parity.yml`** — monthly, plus manual dispatch with a
+  custom site list. Runs the live comparison. A failure here means "go and
+  look", and the workflow prints the three likely causes in order.
+
+Python 3.8 is in the matrix specifically because the README claims it as the
+floor. A claim nothing tests is a claim waiting to be wrong.

@@ -1,0 +1,60 @@
+name: Parity with the reference
+
+# Every specification this repo tracks is a draft, and the reference scanner
+# can change its own rules without notice. This job is the tripwire: it scans
+# live sites through both this scanner and isitagentready.com and fails when
+# the assigned levels stop agreeing.
+#
+# It is deliberately NOT part of CI. It depends on third-party sites being up,
+# so a failure here means "go and look", not "the last commit was bad". A
+# failed scheduled run emails the repository owner.
+
+on:
+  schedule:
+    # 06:17 UTC on the 1st of each month. Off the hour on purpose: scheduled
+    # jobs at :00 queue behind everyone else's.
+    - cron: "17 6 1 * *"
+  workflow_dispatch:
+    inputs:
+      sites:
+        description: "Comma-separated sites to compare (default: one per level)"
+        required: false
+        default: "github.com,stripe.com,www.baccan.it,cloudflare.com,docs.stripe.com,vercel.com"
+
+permissions:
+  contents: read
+
+jobs:
+  parity:
+    name: Compare levels against isitagentready.com
+    runs-on: ubuntu-latest
+    # The reference API takes 60-90s per site.
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Ladder rules (offline) still hold
+        # If this fails, the rules themselves are wrong and the live comparison
+        # below would only tell you the same thing more slowly.
+        run: python docs/verify/verify_ladder.py
+
+      - name: Live comparison
+        run: |
+          python docs/verify/verify_parity.py \
+            --sites "${{ inputs.sites || 'github.com,stripe.com,www.baccan.it,cloudflare.com,docs.stripe.com,vercel.com' }}"
+
+      - name: What to do if this failed
+        if: failure()
+        run: |
+          echo "::notice::A level disagreed with isitagentready.com."
+          echo "Likely causes, in order:"
+          echo "  1. A fixture site changed - it published or removed a surface."
+          echo "     Confirm by hand, then refresh: verify_ladder.py --refresh"
+          echo "  2. The reference changed its rules. Re-derive them:"
+          echo "     see docs/METHODOLOGY.md section 2."
+          echo "  3. A draft spec moved a path. See docs/SOURCES.md."

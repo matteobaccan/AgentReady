@@ -1,0 +1,58 @@
+name: CI
+
+# The blocking checks here are offline and deterministic, so a red build always
+# means this repo broke -- never that someone else's site was down. The one
+# network step is a non-blocking smoke test. The live comparison against
+# isitagentready.com lives in parity.yml and runs on a schedule instead.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ matrix.os }} / Python ${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # 3.8 is the version the README claims as the floor, so it is tested.
+          # It needs ubuntu-22.04: no 3.8 build is published for 24.04.
+          - { os: ubuntu-22.04,   python: "3.8" }
+          - { os: ubuntu-latest,  python: "3.11" }
+          - { os: ubuntu-latest,  python: "3.13" }
+          # The scanner is developed on Windows; path handling regresses there
+          # first.
+          - { os: windows-latest, python: "3.11" }
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: No dependencies, by design
+        run: python -c "import sys; print(sys.version)"
+
+      - name: Every module compiles
+        run: python -m compileall -q skills docs/verify
+
+      - name: Ladder rules still reproduce the reference
+        run: python docs/verify/verify_ladder.py
+
+      - name: Shipped templates are valid and still templates
+        run: python docs/verify/verify_assets.py
+
+      - name: Smoke test - scanner completes a real scan (non-blocking)
+        # compileall catches syntax errors; this catches a runtime crash in
+        # run_scan(). It touches the network, so it must never fail the build:
+        # example.com being unreachable is not a defect in this repo.
+        continue-on-error: true
+        run: python skills/agent-ready/scripts/agent_ready_scan.py example.com --no-extended
