@@ -1,0 +1,36 @@
+{
+  "$comment": "RFC 9727 API Catalog. Serve at /.well-known/api-catalog (no extension) with Content-Type: application/linkset+json. Spec: https://www.rfc-editor.org/rfc/rfc9727.html",
+  "linkset": [
+    {
+      "anchor": "https://{{DOMAIN}}/api",
+      "service-desc": [
+        {
+          "href": "https://{{DOMAIN}}/openapi.json",
+          "type": "application/openapi+json",
+          "title": "{{SITE_NAME}} OpenAPI description"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://{{DOMAIN}}/docs/api",
+          "type": "text/html",
+          "title": "{{SITE_NAME}} API documentation"
+        }
+      ],
+      "service-meta": [
+        {
+          "href": "https://{{DOMAIN}}/.well-known/oauth-protected-resource",
+          "type": "application/json",
+          "title": "Authorization requirements"
+        }
+      ],
+      "status": [
+        {
+          "href": "https://status.{{DOMAIN}}/",
+          "type": "text/html",
+          "title": "Service status"
+        }
+      ]
+    }
+  ]
+}

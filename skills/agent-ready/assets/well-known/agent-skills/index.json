@@ -1,0 +1,11 @@
+{
+  "$schema": "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
+  "skills": [
+    {
+      "name": "{{skill-name}}",
+      "type": "skill-md",
+      "description": "{{What the skill does and WHEN an agent should use it. This one line is what an agent matches against, so lead with the trigger.}}",
+      "url": "/.well-known/agent-skills/{{skill-name}}/SKILL.md"
+    }
+  ]
+}

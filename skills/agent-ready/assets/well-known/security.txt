@@ -1,0 +1,6 @@
+# Serve at /.well-known/security.txt - RFC 9116
+Contact: mailto:security@{{DOMAIN}}
+Expires: {{YYYY-MM-DD}}T00:00:00.000Z
+Preferred-Languages: en, it
+Canonical: https://{{DOMAIN}}/.well-known/security.txt
+Policy: https://{{DOMAIN}}/security-policy

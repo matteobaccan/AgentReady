@@ -1,0 +1,29 @@
+# {{SITE_NAME}}
+
+> {{ONE_SENTENCE_DESCRIPTION}}
+
+{{One or two paragraphs of context an LLM needs before reading anything else:
+what this site is, who runs it, what is authoritative here and what is not.}}
+
+## Core pages
+
+- [Home](https://{{DOMAIN}}/): {{what a reader finds here}}
+- [About](https://{{DOMAIN}}/about): {{who is behind the site, credentials}}
+- [Contact](https://{{DOMAIN}}/contact): {{how to reach a human}}
+
+## Documentation
+
+- [Getting started](https://{{DOMAIN}}/docs/start): {{summary}}
+- [API reference](https://{{DOMAIN}}/docs/api): {{summary}}
+
+## Optional
+
+- [Changelog](https://{{DOMAIN}}/changelog): {{summary}}
+- [Archive](https://{{DOMAIN}}/archive): {{summary}}
+
+## Machine-readable surfaces
+
+- [Sitemap](https://{{DOMAIN}}/sitemap.xml)
+- [MCP server card](https://{{DOMAIN}}/.well-known/mcp.json)
+- [Agent skills index](https://{{DOMAIN}}/.well-known/agent-skills/index.json)
+- [AI catalog (ARD)](https://{{DOMAIN}}/.well-known/ai-catalog.json)

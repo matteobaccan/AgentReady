@@ -1,0 +1,56 @@
+<!--
+  Put this in <head> on the homepage. Organization + WebSite JSON-LD is the
+  single highest-leverage bit of structured data: it tells an agent who you
+  are, what you publish, and where your other machine-readable surfaces live.
+  Validate with https://validator.schema.org/
+-->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://{{DOMAIN}}/#organization",
+      "name": "{{ORG_NAME}}",
+      "url": "https://{{DOMAIN}}/",
+      "logo": "https://{{DOMAIN}}/logo.png",
+      "description": "{{One sentence about the organisation.}}",
+      "sameAs": [
+        "https://github.com/{{handle}}",
+        "https://www.linkedin.com/company/{{handle}}"
+      ],
+      "contactPoint": [{
+        "@type": "ContactPoint",
+        "contactType": "customer support",
+        "email": "support@{{DOMAIN}}",
+        "availableLanguage": ["en", "it"]
+      }]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://{{DOMAIN}}/#website",
+      "url": "https://{{DOMAIN}}/",
+      "name": "{{SITE_NAME}}",
+      "publisher": { "@id": "https://{{DOMAIN}}/#organization" },
+      "inLanguage": "{{en}}",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://{{DOMAIN}}/search?q={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    }
+  ]
+}
+</script>
+
+<!-- Agent-relevant discovery links. Mirror these as HTTP Link headers too:
+     scanners and non-HTML fetches only ever see the headers. -->
+<link rel="canonical" href="https://{{DOMAIN}}{{PATH}}">
+<link rel="alternate" type="text/markdown" href="https://{{DOMAIN}}{{PATH}}.md">
+<link rel="ai-catalog" href="https://{{DOMAIN}}/.well-known/ai-catalog.json">
+<link rel="service-desc" type="application/openapi+json" href="https://{{DOMAIN}}/openapi.json">
+<link rel="describedby" href="https://{{DOMAIN}}/.well-known/agent-skills/index.json">
+<link rel="alternate" type="application/rss+xml" title="{{SITE_NAME}}" href="https://{{DOMAIN}}/feed.xml">

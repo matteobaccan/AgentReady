@@ -1,0 +1,39 @@
+# robots.txt for {{DOMAIN}}
+# Covers classic crawlers, AI crawlers and agent discovery.
+# Spec: RFC 9309 - https://www.rfc-editor.org/rfc/rfc9309.html
+
+# --- Default group: applies to every crawler, AI ones included -------------
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /cart
+Disallow: /checkout
+Disallow: /*?*session=
+
+# Content Signals: how you allow this content to be USED, per RFC-style
+# key=value pairs. yes / no / (empty = no preference stated).
+#   search    - classic search index: links and short excerpts
+#   ai-input  - real-time grounding for generative answers (RAG)
+#   ai-train  - training or fine-tuning a model
+# Spec: https://contentsignals.org/
+Content-Signal: search=yes, ai-input=yes, ai-train=no
+
+# --- Optional: per-bot overrides ------------------------------------------
+# Only add these if you want DIFFERENT rules than the wildcard group.
+# A bot that matches a named group ignores the wildcard group entirely,
+# so repeat the Content-Signal line inside any group you create.
+
+# User-agent: GPTBot
+# Content-Signal: search=yes, ai-input=yes, ai-train=no
+# Allow: /
+
+# User-agent: ClaudeBot
+# Content-Signal: search=yes, ai-input=yes, ai-train=no
+# Allow: /
+
+# --- Discovery pointers ---------------------------------------------------
+Sitemap: https://{{DOMAIN}}/sitemap.xml
+
+# Agentic Resource Discovery: points agents at your capability manifest.
+# Spec: https://agenticresourcediscovery.org/spec/
+Agentmap: https://{{DOMAIN}}/.well-known/ai-catalog.json

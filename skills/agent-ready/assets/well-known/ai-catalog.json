@@ -1,0 +1,35 @@
+{
+  "$comment": "ARD capability manifest. Serve at /.well-known/ai-catalog.json with Content-Type: application/json. Spec: https://agenticresourcediscovery.org/spec/",
+  "specVersion": "1.0",
+  "host": {
+    "displayName": "{{SITE_NAME}}",
+    "identifier": "did:web:{{DOMAIN}}",
+    "documentationUrl": "https://{{DOMAIN}}/docs",
+    "logoUrl": "https://{{DOMAIN}}/logo.svg"
+  },
+  "entries": [
+    {
+      "identifier": "urn:air:{{DOMAIN}}:server:main",
+      "displayName": "{{SITE_NAME}} MCP server",
+      "type": "application/mcp-server-card+json",
+      "url": "https://{{DOMAIN}}/.well-known/mcp.json",
+      "description": "{{One sentence: what an agent can do here.}}",
+      "tags": ["{{topic}}", "{{topic}}"],
+      "capabilities": ["{{toolName}}", "{{toolName}}"],
+      "representativeQueries": [
+        "{{a natural-language task this server can complete}}",
+        "{{another one}}"
+      ],
+      "version": "1.0.0",
+      "updatedAt": "{{YYYY-MM-DD}}T00:00:00Z"
+    },
+    {
+      "identifier": "urn:air:{{DOMAIN}}:api:public",
+      "displayName": "{{SITE_NAME}} public API",
+      "type": "application/openapi+json",
+      "url": "https://{{DOMAIN}}/openapi.json",
+      "description": "{{What the REST API exposes.}}",
+      "representativeQueries": ["{{sample task}}"]
+    }
+  ]
+}

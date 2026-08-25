@@ -1,0 +1,22 @@
+{
+  "$comment": "MCP Server Card. Serve at /.well-known/mcp.json. Spec: https://github.com/modelcontextprotocol/modelcontextprotocol/pull/2127",
+  "serverInfo": {
+    "name": "{{SITE_NAME}} MCP server",
+    "version": "1.0.0"
+  },
+  "description": "{{One or two sentences an agent reads to decide whether to connect. Say what the tools do, not what your company is.}}",
+  "url": "https://{{DOMAIN}}/mcp",
+  "transport": {
+    "type": "streamable-http"
+  },
+  "capabilities": {
+    "tools": true,
+    "resources": false,
+    "prompts": false
+  },
+  "documentationUrl": "https://{{DOMAIN}}/docs/mcp",
+  "authorization": {
+    "type": "oauth2",
+    "protectedResourceMetadata": "https://{{DOMAIN}}/.well-known/oauth-protected-resource"
+  }
+}

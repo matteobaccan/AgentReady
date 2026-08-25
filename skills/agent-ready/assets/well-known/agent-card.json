@@ -1,0 +1,30 @@
+{
+  "$comment": "A2A Agent Card. Serve at /.well-known/agent-card.json. Spec: https://a2a-protocol.org/latest/specification/",
+  "protocolVersion": "0.3.0",
+  "name": "{{SITE_NAME}} Agent",
+  "description": "{{What this agent does for a calling agent, in one sentence.}}",
+  "url": "https://{{DOMAIN}}/a2a",
+  "preferredTransport": "JSONRPC",
+  "provider": {
+    "organization": "{{ORG_NAME}}",
+    "url": "https://{{DOMAIN}}"
+  },
+  "version": "1.0.0",
+  "documentationUrl": "https://{{DOMAIN}}/docs/a2a",
+  "capabilities": {
+    "streaming": true,
+    "pushNotifications": false,
+    "extensions": []
+  },
+  "defaultInputModes": ["text/plain", "application/json"],
+  "defaultOutputModes": ["text/plain", "application/json"],
+  "skills": [
+    {
+      "id": "{{skill-id}}",
+      "name": "{{Skill name}}",
+      "description": "{{What it does and when to call it.}}",
+      "tags": ["{{topic}}"],
+      "examples": ["{{example request}}"]
+    }
+  ]
+}
