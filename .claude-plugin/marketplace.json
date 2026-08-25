@@ -1,0 +1,18 @@
+{
+  "name": "agentready",
+  "owner": {
+    "name": "Matteo Baccan",
+    "email": "matteo.baccan@gmail.com"
+  },
+  "metadata": {
+    "description": "Tools for making websites readable and usable by AI agents.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "agent-ready",
+      "source": "./",
+      "description": "Score a site 0-5 on AI agent readiness and generate the files that raise it."
+    }
+  ]
+}

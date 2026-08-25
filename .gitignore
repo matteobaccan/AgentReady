@@ -1,0 +1,20 @@
+# scan output
+agent-readiness.md
+agent-readiness.json
+*.report.json
+*.report.md
+
+# python
+__pycache__/
+*.pyc
+.venv/
+
+# os
+Thumbs.db
+.DS_Store
+
+# scan artefacts from the verify scripts
+docs/verify/*.json
+
+# local activation junction -> skills/agent-ready (would duplicate every file)
+.claude/

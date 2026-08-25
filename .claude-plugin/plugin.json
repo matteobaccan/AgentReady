@@ -1,0 +1,15 @@
+{
+  "name": "agent-ready",
+  "version": "1.0.0",
+  "description": "Audit and fix how ready a website is for AI agents: 0-5 readiness level across 30 checks, plus ready-to-deploy robots.txt, llms.txt, ai-catalog.json, mcp.json, agent-card.json and server recipes.",
+  "author": {
+    "name": "Matteo Baccan",
+    "email": "matteo.baccan@gmail.com"
+  },
+  "homepage": "https://github.com/matteobaccan/AgentReady",
+  "license": "MIT",
+  "keywords": [
+    "agent-ready", "ai-ready", "llms.txt", "mcp", "robots.txt",
+    "content-signals", "ard", "webmcp", "a2a", "agentic-commerce", "seo", "geo"
+  ]
+}
