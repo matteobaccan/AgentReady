@@ -57,20 +57,22 @@ tiebreaker.
 
 ## Part 2 — Open
 
-### O1 · Publish the repo publicly?
+*O1 is settled and kept here for its reasoning.*
 
-*Status: the owner will publish it and supply the URL.*
+### ~~O1 · Publish the repo publicly?~~ — *done*
 
-Worth being deliberate about, because this reimplements the scoring model of a
-Cloudflare product, recovered from its public API. That is legitimate — the API
-is public, no Cloudflare code or copy is included, and the remediation content
-is original — but publishing makes the relationship visible. The attribution is
-already written into the README and `SOURCES.md`.
+Published at <https://github.com/matteobaccan/AgentReady>, MIT, public.
 
-Once the URL exists, three things need updating: the `homepage` field in
-`.claude-plugin/plugin.json`, the install commands in `README.md`, and the
-`UA` string in `agent_ready_scan.py`, which currently points at a placeholder
-GitHub URL.
+It was worth being deliberate about, because this reimplements the scoring
+model of a Cloudflare product recovered from its public API. That is legitimate
+— the API is public, no Cloudflare code or copy is included, and the
+remediation content is original — but publishing makes the relationship
+visible, so the attribution in `README.md` and `SOURCES.md` is doing real work
+now rather than sitting there as boilerplate.
+
+The three URL references (`homepage` in `.claude-plugin/plugin.json`, the
+install commands in `README.md`, the `UA` string in `agent_ready_scan.py`) all
+point at the live repo.
 
 ### O2 · Keep MIT, or move to Apache 2.0?
 
